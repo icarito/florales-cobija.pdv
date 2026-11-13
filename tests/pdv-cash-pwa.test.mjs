@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import vm from 'node:vm';
 
 const [app, index, pdv] = await Promise.all([
   readFile(new URL('../app.js', import.meta.url), 'utf8'),
@@ -44,4 +45,44 @@ test('settings expose release notes', () => {
   assert.match(app, /\['updates','Notas de actualización'\]/);
   assert.match(app, /Versión de producción/);
   assert.match(app, /releaseNotes/);
+});
+
+
+test('POS withdrawal form selects an outflow and returns to cash on cancel', () => {
+  let html;
+  const ctx = vm.createContext({ openLayer: value => { html = value; }, layerHead: () => '' });
+  vm.runInContext(app.slice(app.indexOf('function cashForm('), app.indexOf('function quickSettings(')), ctx);
+  ctx.cashForm('out', true);
+  assert.match(html, /value="out" selected/);
+  assert.match(html, /data-return-pos="1"/);
+  assert.match(html, /data-action="pos-cash-session"/);
+  ctx.cashForm();
+  assert.match(html, /value="in" selected/);
+  assert.match(html, /data-return-pos="0"/);
+});
+
+test('saving a POS withdrawal persists its currency and returns to cash', async () => {
+  const start = app.indexOf("if(f.id==='cashForm')");
+  const end = app.indexOf("\n", start);
+  for (const currency of ['BOB', 'BRL']) {
+    let saved, returned = false;
+    const ctx = vm.createContext({
+      f: { id: 'cashForm', dataset: { returnPos: '1' } },
+      d: { type: 'out', currency, amount: '25', description: 'Entrega' },
+      ensureCashSession: () => ({ id: 'session' }), terminalId: 'terminal',
+      currentEmployee: () => ({ name: 'Caja' }), state: { cash: [] },
+      FloralisBackend: { addCashMovement: async movement => { saved = movement; return { id: 'remote' }; } },
+      save() {}, auditEvent() {}, directCurrencyMoney: String, toast() {},
+      posSettingsPanel: tab => { assert.equal(tab, 'cash'); returned = true; },
+      closeLayer() { throw Error('must return to POS cash'); }, render() {},
+    });
+    await vm.runInContext('(async()=>{' + app.slice(start, end) + '})()', ctx);
+    assert.equal(saved.type, 'out');
+    assert.equal(saved.currency, currency);
+    assert.equal(saved.amountBob, currency === 'BOB' ? 25 : 0);
+    assert.equal(saved.amountBrl, currency === 'BRL' ? 25 : 0);
+    assert.equal(saved.cashSessionId, 'session');
+    assert.equal(ctx.state.cash[0].id, 'remote');
+    assert.equal(returned, true);
+  }
 });

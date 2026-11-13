@@ -27,3 +27,15 @@ A migração não reinterpreta vendas históricas. O código genérico OTRO é c
 - Navegador em modo demonstração: 1440×900, 1024×768, 800×1280, 390×844 e 360×640; sem overflow horizontal e com cobrança dentro da tela.
 - Navegador: abertura de caixa, produto, troca BOB/BRL, carrinho recolhível, catálogo oculto, busca/Enter/Escape, cobrança e cupom com troco; zero erros de JavaScript.
 - Vendas comerciais reais não foram usadas como teste. Testes transacionais no banco e demonstração no navegador foram realizados separadamente.
+
+## Integração local no fork de Cobija
+
+O fork `icarito/florales-cobija.pdv` usa o projeto Supabase `lqwnsxalmouqcylgjejm`. Ao incorporar o upstream `Delta-1/FLORALIS.PDV`, preserve essa identidade em `config.js` e `dist/config.js`: o projeto `armovjqaqmhekescgtiy` pertence à instalação do upstream e não representa uma migração dos dados do fork.
+
+A integração local solicitada em 2026-10-29 não autoriza push, deploy nem execução de migrações em produção. A criação de `admin@hablar.fuentelibre.org` é uma operação separada explicitamente solicitada; não confundir integração de código com provisionamento de acesso.
+
+A conta `admin@hablar.fuentelibre.org` foi criada e teve login e associação administrativa ativa à empresa Florales Cobija verificados em 2026-10-29. A senha temporária exige troca no primeiro acesso; credenciais não pertencem ao repositório. Nenhum deploy ou migração foi executado para esse provisionamento.
+
+## Atualização autorizada em 2026-11-12
+
+O upstream foi atualizado até `4d291b4`, preservando o Supabase de Cobija e o login por e-mail da instalação. O usuário autorizou atualizar o fork e publicar o site. A alteração local de saída de caixa no PDV foi completada com ação do botão e retorno à tela de caixa após salvar ou cancelar; mantém moedas e sessão independentes e reutiliza a operação existente no backend. As anotações históricas de sessão foram preservadas.
